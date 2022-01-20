@@ -1,0 +1,95 @@
+{
+	"cmake" : 
+	{
+		"generator" : 
+		{
+			"multiConfig" : false,
+			"name" : "MinGW Makefiles"
+		},
+		"paths" : 
+		{
+			"cmake" : "F:/Program Files/JetBrains/CLion 2020.3.3/bin/cmake/win/bin/cmake.exe",
+			"cpack" : "F:/Program Files/JetBrains/CLion 2020.3.3/bin/cmake/win/bin/cpack.exe",
+			"ctest" : "F:/Program Files/JetBrains/CLion 2020.3.3/bin/cmake/win/bin/ctest.exe",
+			"root" : "F:/Program Files/JetBrains/CLion 2020.3.3/bin/cmake/win/share/cmake-3.17"
+		},
+		"version" : 
+		{
+			"isDirty" : false,
+			"major" : 3,
+			"minor" : 17,
+			"patch" : 5,
+			"string" : "3.17.5",
+			"suffix" : ""
+		}
+	},
+	"objects" : 
+	[
+		{
+			"jsonFile" : "codemodel-v2-0dd0e9c49c36b2e1a264.json",
+			"kind" : "codemodel",
+			"version" : 
+			{
+				"major" : 2,
+				"minor" : 0
+			}
+		},
+		{
+			"jsonFile" : "cache-v2-984961244d492d9599d8.json",
+			"kind" : "cache",
+			"version" : 
+			{
+				"major" : 2,
+				"minor" : 0
+			}
+		}
+	],
+	"reply" : 
+	{
+		"client-vscode" : 
+		{
+			"query.json" : 
+			{
+				"requests" : 
+				[
+					{
+						"kind" : "cache",
+						"version" : 2
+					},
+					{
+						"kind" : "codemodel",
+						"version" : 2
+					},
+					{
+						"kind" : "toolchains",
+						"version" : 1
+					}
+				],
+				"responses" : 
+				[
+					{
+						"jsonFile" : "cache-v2-984961244d492d9599d8.json",
+						"kind" : "cache",
+						"version" : 
+						{
+							"major" : 2,
+							"minor" : 0
+						}
+					},
+					{
+						"jsonFile" : "codemodel-v2-0dd0e9c49c36b2e1a264.json",
+						"kind" : "codemodel",
+						"version" : 
+						{
+							"major" : 2,
+							"minor" : 0
+						}
+					},
+					{
+						"error" : "unknown request kind 'toolchains'"
+					}
+				]
+			}
+		}
+	}
+}

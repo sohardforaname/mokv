@@ -68,6 +68,30 @@ namespace DB {
             }
         };
 
+        class SkipListIterator {
+        private:
+            Node *cur_;
+
+            friend class SkipList;
+
+        public:
+            SkipListIterator() = delete;
+
+            explicit SkipListIterator(Node *cur) : cur_(cur) {}
+
+            SkipListIterator(const SkipListIterator &) = default;
+
+            bool hasNext() {
+                return cur_->next_[0];
+            }
+
+            T &next() {
+                cur_ = cur_->next_[0];
+                return cur_->dat_;
+            }
+
+        };
+
         SkipList() = default;
 
         void insert(const T &dat);
@@ -75,6 +99,10 @@ namespace DB {
         NodeProxy find(const T &dat) const;
 
         void erase(const T &dat);
+
+        SkipListIterator iter() {
+            return SkipListIterator{head_};
+        }
 
         size_t scan(std::function<bool(const T &)> scan_func) const;
     };

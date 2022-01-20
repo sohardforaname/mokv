@@ -20,7 +20,8 @@ namespace DB {
         auto offset = writeToBuffer(buffer, aligned_buffer_size);
         offset += internal_key.generateInternalKey(buffer + offset);
 
-        writeToBuffer(buffer + offset, std::make_pair(key, key_size), std::make_pair(value, value_size));
+        writeToBuffer(buffer + offset, key_size, std::make_pair(key, key_size), value_size,
+                      std::make_pair(value, value_size));
         // TODO: append crc32 code.
         table_.insert(buffer);
     }
@@ -33,21 +34,19 @@ namespace DB {
         return nullptr;
     }
 
-    size_t MemTable::scan(std::function<bool(const char *)> scan_func) {
-        return table_.scan(std::move(scan_func));
-    }
+    bool MemTable::generateSSTableFile(const char *file_path, const Schema &schema) {
 
-    bool MemTable::generateSSTableFile(const char *file_path) {
-        FILE *file = fopen(file_path, "wb");
-        if (nullptr == file) {
-            return false;
+        DataBlockBuilder builder(schema);
+
+        auto iter = table_.iter();
+        while (iter.hasNext()) {
+            auto ptr = iter.next();
+            const auto offset = sizeof(size_t) * 3;
+            builder.add(ptr + offset, *(size_t *) (ptr) - offset);
         }
 
-        scan([&](const char *dat) -> bool {
-            fwrite(dat, sizeof(char), *(size_t *) dat, file);
-            return true;
-        });
-
+        builder.finish(file_path);
+        builder.reset();
         return true;
     }
 }
