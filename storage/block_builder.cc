@@ -16,12 +16,35 @@ namespace DB {
         return false;
     }
 
-    void MetaBlockBuilder::addData(const char *data, size_t len) {
+    template<class T>
+    void setMinMax(Comparator<T> *comparator, const char *data, const char **max_data, const char **min_data) {
+        int res = comparator->compare(data, *min_data);
+        if (res < 0) {
+            *min_data = data;
+        }
+        res = comparator->compare(data, *max_data);
+        if (res > 0) {
+            *max_data = data;
+        }
+    }
 
+    void MetaBlockBuilder::addData(const char *data, size_t len, bool flexible) {
+        ++counter_;
+        filter_.set(data, len);
+        if (nullptr == max_data_) {
+            max_data_ = min_data_ = data;
+            return;
+        }
+        if (flexible) {
+            setMinMax(f_cmp_, data, &max_data_, &min_data_);
+            return;
+        }
+        str_cmp_ = new(str_cmp_) StrComparator(len);
+        setMinMax(str_cmp_, data, &max_data_, &min_data_);
     }
 
     bool MetaBlockBuilder::dumpMetaBlock(const char *file_path) {
-        return false;
+
     }
 
     DataBlockBuilder::DataBlockBuilder(const Schema &schema)

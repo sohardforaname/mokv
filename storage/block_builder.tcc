@@ -11,21 +11,46 @@
 #include <utility>
 #include <unistd.h>
 #include "../util/const.tcc"
+#include "../util/bloom_filter.tcc"
 #include "../db/schema.tcc"
+#include "../util/comparator.tcc"
 
 // TODO: key-value分离
 
 namespace DB {
 
+    struct FlexibleComparator : public Comparator<FlexibleComparator> {
+        static int compare(const char *a, const char *b) {
+            return memcmp(a + sizeof(size_t),
+                          b + sizeof(size_t),
+                          std::min(*(size_t *) a, *(size_t *) b));
+        }
+    };
+
+    struct StrComparator : public Comparator<StrComparator> {
+        size_t size_;
+
+        StrComparator() = delete;
+
+        explicit StrComparator(size_t size) : size_(size) {}
+
+        int compare(const char *a, const char *b) {
+            return memcmp(a, b, size_);
+        }
+    };
+
     class MetaBlockBuilder {
     private:
         size_t counter_;
-        char filter_[BLOOM_FILTER_SIZE];
-        const char *max_data, *min_data;
+        BloomFilter filter_;
+        const char *max_data_ = nullptr, *min_data_ = nullptr;
 
         bool dumpHeaderBlock(int fd);
 
         bool dumpFilterBlock(int fd);
+
+        Comparator<FlexibleComparator> *f_cmp_ = new FlexibleComparator;
+        Comparator<StrComparator> *str_cmp_ = new StrComparator(0);
 
     public:
         MetaBlockBuilder() = default;
@@ -34,7 +59,12 @@ namespace DB {
 
         MetaBlockBuilder(MetaBlockBuilder &&) = delete;
 
-        void addData(const char *data, size_t len);
+        ~MetaBlockBuilder() {
+            delete f_cmp_;
+            delete str_cmp_;
+        }
+
+        void addData(const char *data, size_t len, bool flexible = false);
 
         bool dumpMetaBlock(const char *file_path);
     };
@@ -52,6 +82,7 @@ namespace DB {
         struct Buffer_ {
             char *dat_ = (char *) malloc(BLOCK_BUILDER_INIT_SIZE);
             size_t size_ = 0, capacity_ = BLOCK_BUILDER_INIT_SIZE;
+            MetaBlockBuilder meta_block_;
 
             Buffer_() = default;
         } *buffer_;
