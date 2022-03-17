@@ -2,8 +2,8 @@
 // Created by ucchi_mchxyz on 2022/1/9.
 //
 
-#ifndef MOKV_RANGE_ITERATOR_TCC
-#define MOKV_RANGE_ITERATOR_TCC
+#ifndef MOKV_RANGE_TCC
+#define MOKV_RANGE_TCC
 
 namespace DB {
 
@@ -14,4 +14,4 @@ namespace DB {
 }
 
 
-#endif //MOKV_RANGE_ITERATOR_TCC
+#endif //MOKV_RANGE_TCC

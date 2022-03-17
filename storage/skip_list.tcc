@@ -72,8 +72,6 @@ namespace DB {
         private:
             Node *cur_;
 
-            friend class SkipList;
-
         public:
             SkipListIterator() = delete;
 

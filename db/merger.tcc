@@ -2,8 +2,8 @@
 // Created by ucchi_mchxyz on 2022/1/9.
 //
 
-#ifndef MOKV_MERGE_ITERATOR_TCC
-#define MOKV_MERGE_ITERATOR_TCC
+#ifndef MOKV_MERGER_TCC
+#define MOKV_MERGER_TCC
 
 #include <cstddef>
 #include <cstdio>
@@ -27,4 +27,4 @@ namespace DB {
 }
 
 
-#endif //MOKV_MERGE_ITERATOR_TCC
+#endif //MOKV_MERGER_TCC

@@ -13,7 +13,7 @@
 
 #include "../storage/memtable.tcc"
 #include "../storage/buffer_pool.tcc"
-#include "range_iterator.tcc"
+#include "range.tcc"
 
 namespace DB {
 

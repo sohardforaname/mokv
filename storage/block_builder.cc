@@ -2,121 +2,154 @@
 // Created by ucchi_mchxyz on 2022/1/7.
 //
 
-#include <fcntl.h>
 #include "block_builder.tcc"
-#include "../util/defer.tcc"
 
 namespace DB {
 
-    bool MetaBlockBuilder::dumpHeaderBlock(int fd) {
-        return false;
+bool MetaBlockBuilder::dumpHeaderBlock(int fd)
+{
+    write(fd, &SSTABLE_MAGIC_NUM, sizeof(size_t));
+    write(fd, &counter_, sizeof(size_t));
+    write(fd, &len_, sizeof(size_t));
+
+    size_t min_data_len = len_ ? len_ : (*(size_t*)(buffer_addr_ + min_data_offset_)) + sizeof(size_t),
+           max_data_len = len_ ? len_ : (*(size_t*)(buffer_addr_ + max_data_offset_)) + sizeof(size_t);
+    write(fd, buffer_addr_ + min_data_offset_, min_data_len);
+    write(fd, buffer_addr_ + max_data_offset_, max_data_len);
+    return true;
+}
+
+bool MetaBlockBuilder::dumpFilterBlock(int fd)
+{
+    // write(fd, filter_.buffer(), BLOOM_FILTER_SIZE);
+    return true;
+}
+
+template <class T>
+void MetaBlockBuilder::setMinMax(Comparator<T>* comparator, const char* data, size_t offset)
+{
+    int res = comparator->compare(data, buffer_addr_ + min_data_offset_);
+    if (res < 0) {
+        min_data_offset_ = offset;
     }
-
-    bool MetaBlockBuilder::dumpFilterBlock(int fd) {
-        return false;
+    res = comparator->compare(data, buffer_addr_ + max_data_offset_);
+    if (res > 0) {
+        max_data_offset_ = offset;
     }
+}
 
-    template<class T>
-    void setMinMax(Comparator<T> *comparator, const char *data, const char **max_data, const char **min_data) {
-        int res = comparator->compare(data, *min_data);
-        if (res < 0) {
-            *min_data = data;
-        }
-        res = comparator->compare(data, *max_data);
-        if (res > 0) {
-            *max_data = data;
-        }
+void MetaBlockBuilder::addData(const char* data, size_t offset, size_t len)
+{
+    ++counter_;
+    filter_.set(data, len);
+    if (-1 == max_data_offset_) {
+        max_data_offset_ = min_data_offset_ = offset;
+        return;
     }
-
-    void MetaBlockBuilder::addData(const char *data, size_t len, bool flexible) {
-        ++counter_;
-        filter_.set(data, len);
-        if (nullptr == max_data_) {
-            max_data_ = min_data_ = data;
-            return;
-        }
-        if (flexible) {
-            setMinMax(f_cmp_, data, &max_data_, &min_data_);
-            return;
-        }
-        str_cmp_ = new(str_cmp_) StrComparator(len);
-        setMinMax(str_cmp_, data, &max_data_, &min_data_);
+    if (!len_) {
+        setMinMax(f_cmp_, data, offset);
+        return;
     }
+    str_cmp_ = new (str_cmp_) StrComparator(len);
+    setMinMax(str_cmp_, data, offset);
+}
 
-    bool MetaBlockBuilder::dumpMetaBlock(const char *file_path) {
+bool MetaBlockBuilder::dumpMetaBlock(int fd)
+{
+    return dumpHeaderBlock(fd) && dumpFilterBlock(fd);
+}
 
+DataBlockBuilder::DataBlockBuilder(const Schema& schema)
+    : schema_(schema)
+    , col_num_(schema.size())
+    , buffer_(new Buffer_[schema.size()])
+{
+    setFlexible();
+}
+
+void DataBlockBuilder::reserve(size_t idx)
+{
+    buffer_[idx].capacity_ <<= 1;
+    buffer_[idx].dat_ = (char*)realloc(buffer_[idx].dat_, buffer_[idx].capacity_);
+    if (nullptr == buffer_[idx].dat_) {
+        throw std::bad_alloc {};
     }
+    buffer_[idx].meta_block_->resetBufferAddr(buffer_[idx].dat_);
+}
 
-    DataBlockBuilder::DataBlockBuilder(const Schema &schema)
-            : schema_(schema),
-              col_num_(schema.size()),
-              buffer_(new Buffer_[schema.size()]) {}
-
-    void DataBlockBuilder::reserve(size_t idx) {
-        buffer_[idx].capacity_ <<= 1;
-        buffer_[idx].dat_ = (char *) realloc(buffer_[idx].dat_, buffer_[idx].capacity_);
-        if (nullptr == buffer_[idx].dat_) {
-            throw std::bad_alloc{};
-        }
-    }
-
-    void DataBlockBuilder::append() {
-        for (size_t i = 0; i < col_num_; ++i) {
-            for (size_t j = 0; j < cache_size_; ++j) {
-                auto len = schema_.getColById(i).first;
-                if (0 == len) {
-                    len = *(size_t *) (cached_data_[j]) + sizeof(size_t);
-                }
-
-                if (buffer_[i].size_ + len > buffer_[i].capacity_) {
-                    reserve(i);
-                }
-                memcpy(buffer_[i].dat_ + buffer_[i].size_, cached_data_[j], len);
-                buffer_[i].size_ += len;
-                cached_data_[j] += len;
+void DataBlockBuilder::append()
+{
+    for (size_t i = 0; i < col_num_; ++i) {
+        for (size_t j = 0; j < cache_size_; ++j) {
+            auto len = schema_.getColById(i).first;
+            if (0 == len) {
+                len = *(size_t*)(cached_data_[j]) + sizeof(size_t);
             }
+
+            if (buffer_[i].size_ + len > buffer_[i].capacity_) {
+                reserve(i);
+            }
+            buffer_[i].meta_block_->addData(cached_data_[j], buffer_[i].size_, len);
+            memcpy(buffer_[i].dat_ + buffer_[i].size_, cached_data_[j], len);
+            buffer_[i].size_ += len;
+            cached_data_[j] += len;
         }
-        cache_size_ = 0;
+    }
+    cache_size_ = 0;
+}
+
+void DataBlockBuilder::setFlexible()
+{
+    auto lens = schema_.getColLen();
+    for (size_t i = 0; i < lens.size(); ++i) {
+        buffer_[i].meta_block_ = new MetaBlockBuilder(lens[i], buffer_[i].dat_);
+    }
+}
+
+void DataBlockBuilder::add(const char* data, size_t len)
+{
+    cached_data_[cache_size_++] = data;
+    ++counter_;
+    if (cache_size_ == BLOCK_BUILDER_CACHE_SIZE) {
+        append();
+    }
+}
+
+bool DataBlockBuilder::finish(const std::string& db_name)
+{
+    if (0 != cache_size_) {
+        append();
     }
 
-    void DataBlockBuilder::add(const char *data, size_t len) {
-        cached_data_[cache_size_++] = data;
-        ++counter_;
-        if (cache_size_ == BLOCK_BUILDER_CACHE_SIZE) {
-            append();
-        }
+    auto path = "./" + db_name;
+    if (-1 == mkdir(path.c_str())) {
+        return false;
     }
 
-    bool DataBlockBuilder::finish(const std::string &db_name) {
-        if (0 != cache_size_) {
-            append();
-        }
-
-        auto path = "./" + db_name;
-        if (-1 == mkdir(path.c_str())) {
+    auto& col_name = schema_.getColName();
+    for (size_t i = 0; i < col_num_; ++i) {
+        auto fd = creat((path + "/" + col_name[i] + ".bin").c_str(), O_RDWR);
+        if (-1 == fd) {
             return false;
         }
-
-        auto &col_name = schema_.getColName();
-        for (size_t i = 0; i < col_num_; ++i) {
-            auto fd = creat((path + "/" + col_name[i] + ".bin").c_str(), O_RDWR);
-            if (-1 == fd) {
-                return false;
-            }
-            Defer defer([&]() { return close(fd); });
-            if (auto st = write(fd, buffer_[i].dat_, buffer_[i].size_); -1 == st) {
-                return false;
-            }
+        Defer defer([&]() { return close(fd); });
+        if (auto st = buffer_[i].meta_block_->dumpMetaBlock(fd); !st) {
+            return false;
         }
-        return true;
+        if (auto st = write(fd, buffer_[i].dat_, buffer_[i].size_); - 1 == st) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void DataBlockBuilder::reset()
+{
+    for (size_t i = 0; i < col_num_; ++i) {
+        buffer_[i].size_ = 0;
+        buffer_[i].capacity_ = BLOCK_BUILDER_INIT_SIZE;
     }
 
-    void DataBlockBuilder::reset() {
-        for (size_t i = 0; i < col_num_; ++i) {
-            buffer_[i].size_ = 0;
-            buffer_[i].capacity_ = BLOCK_BUILDER_INIT_SIZE;
-        }
-
-        cache_size_ = 0;
-    }
+    cache_size_ = 0;
+}
 }

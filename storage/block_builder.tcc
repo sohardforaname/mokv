@@ -10,10 +10,12 @@
 #include <vector>
 #include <utility>
 #include <unistd.h>
+#include <fcntl.h>
 #include "../util/const.tcc"
 #include "../util/bloom_filter.tcc"
-#include "../db/schema.tcc"
 #include "../util/comparator.tcc"
+#include "../util/defer.tcc"
+#include "../db/schema.tcc"
 
 // TODO: key-value分离
 
@@ -41,9 +43,12 @@ namespace DB {
 
     class MetaBlockBuilder {
     private:
-        size_t counter_;
         BloomFilter filter_;
-        const char *max_data_ = nullptr, *min_data_ = nullptr;
+        size_t len_;
+
+        size_t counter_ = 0;
+        const char *buffer_addr_ = nullptr;
+        size_t max_data_offset_ = -1, min_data_offset_ = -1;
 
         bool dumpHeaderBlock(int fd);
 
@@ -52,8 +57,14 @@ namespace DB {
         Comparator<FlexibleComparator> *f_cmp_ = new FlexibleComparator;
         Comparator<StrComparator> *str_cmp_ = new StrComparator(0);
 
+        template<class T>
+        void setMinMax(Comparator<T> *comparator, const char *data, size_t offset);
+
     public:
-        MetaBlockBuilder() = default;
+
+        MetaBlockBuilder(size_t len, const char *buffer_addr) :
+                len_(len),
+                buffer_addr_(buffer_addr) {}
 
         MetaBlockBuilder(const MetaBlockBuilder &) = delete;
 
@@ -64,9 +75,13 @@ namespace DB {
             delete str_cmp_;
         }
 
-        void addData(const char *data, size_t len, bool flexible = false);
+        void resetBufferAddr(const char *new_addr) {
+            buffer_addr_ = new_addr;
+        }
 
-        bool dumpMetaBlock(const char *file_path);
+        void addData(const char *data, size_t offset, size_t len);
+
+        bool dumpMetaBlock(int fd);
     };
 
     class DataBlockBuilder {
@@ -82,12 +97,19 @@ namespace DB {
         struct Buffer_ {
             char *dat_ = (char *) malloc(BLOCK_BUILDER_INIT_SIZE);
             size_t size_ = 0, capacity_ = BLOCK_BUILDER_INIT_SIZE;
-            MetaBlockBuilder meta_block_;
+            MetaBlockBuilder *meta_block_ = nullptr;
 
             Buffer_() = default;
+
+            ~Buffer_() {
+                delete dat_;
+                delete meta_block_;
+            }
         } *buffer_;
 
         size_t counter_ = 0;
+
+        void setFlexible();
 
         void reserve(size_t idx);
 

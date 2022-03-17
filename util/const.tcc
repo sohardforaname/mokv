@@ -23,4 +23,6 @@ const size_t BLOOM_FILTER_SIZE = 1 << 10;
 
 const size_t DB_MAX_IMMEMTABLE = 1;
 
+const size_t SSTABLE_MAGIC_NUM = 0x7a4d;
+
 #endif //MOKV_CONST_TCC

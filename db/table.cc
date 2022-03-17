@@ -56,6 +56,7 @@ namespace DB {
             return nullptr;
         }
         auto raw_ptr = pool_.getData(page_id);
+        return nullptr;
     }
 
     RangeIterator Table::range() {

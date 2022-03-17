@@ -2,7 +2,7 @@
 // Created by ucchi_mchxyz on 2022/1/9.
 //
 
-#include "merge_iterator.tcc"
+#include "merger.tcc"
 
 namespace DB {
 

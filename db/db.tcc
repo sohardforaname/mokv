@@ -7,7 +7,7 @@
 
 #include "../storage/memtable.tcc"
 #include "table.tcc"
-#include "range_iterator.tcc"
+#include "range.tcc"
 
 namespace DB {
 

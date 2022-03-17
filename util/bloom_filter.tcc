@@ -23,7 +23,7 @@ namespace DB {
         size_t hash(const char *str, size_t len, size_t seed) {
             size_t val = 0;
             while (len--) {
-                val = val * seed + (*str);
+                val = val * seed + (*str++);
             }
             return val;
         }
@@ -31,14 +31,14 @@ namespace DB {
     public:
         void set(const char *str, size_t len) {
             for (auto v : hash_args) {
-                auto val = hash(str, len, v);
+                auto val = hash(str, len, v) & (BLOOM_FILTER_SIZE - 1);
                 buffer_[val / 8] |= 1 << (val % 8);
             }
         }
 
         bool check(const char *str, size_t len) {
             for (auto v : hash_args) {
-                auto val = hash(str, len, v);
+                auto val = hash(str, len, v) & (BLOOM_FILTER_SIZE - 1);
                 if (0 == ((buffer_[val / 8] >> (val % 8)) & 1)) {
                     return false;
                 }
@@ -48,6 +48,10 @@ namespace DB {
 
         void reset() {
             memset(buffer_, 0, sizeof(buffer_));
+        }
+
+        const char *buffer() const {
+            return buffer_;
         }
     };
 }
