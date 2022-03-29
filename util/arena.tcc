@@ -25,7 +25,7 @@ namespace DB {
         void *hugeBlockAllocate(size_t alloc_size);
 
     public:
-        Arena() = default;
+        Arena() {}
 
         ~Arena();
 
