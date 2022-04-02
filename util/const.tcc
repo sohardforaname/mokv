@@ -5,6 +5,8 @@
 #ifndef MOKV_CONST_TCC
 #define MOKV_CONST_TCC
 
+#include <cstddef>
+
 const size_t ARENA_PER_PAGE_SPACE = 1 << 12;
 
 const size_t MEMTABLE_MAX_SIZE = 1 << 28;
@@ -25,4 +27,8 @@ const size_t DB_MAX_IMMEMTABLE = 1;
 
 const size_t SSTABLE_MAGIC_NUM = 0x7a4d;
 
-#endif //MOKV_CONST_TCC
+const size_t SST_MAX_LEVEL = 6;
+
+const size_t FILE_CACHE_MAX_FILE = 16;
+const size_t FILE_MAX_SIZE = 1 << 24;
+#endif // MOKV_CONST_TCC

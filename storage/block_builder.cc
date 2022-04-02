@@ -115,32 +115,36 @@ void DataBlockBuilder::add(const char* data, size_t len)
     }
 }
 
-bool DataBlockBuilder::finish(const std::string& db_name)
+// The size of memtable is determined.
+// so the size of the SSTable will not be too big
+// and can be written to a file.
+int DataBlockBuilder::finish(const std::string& db_name)
 {
     if (0 != cache_size_) {
         append();
     }
 
     auto path = "./" + db_name;
-    if (-1 == mkdir(path.c_str())) {
-        return false;
+    umask(0);
+    if (-1 == mkdir(path.c_str(), 0777)) {
+        return errno;
     }
 
     auto& col_name = schema_.getColName();
     for (size_t i = 0; i < col_num_; ++i) {
-        auto fd = creat((path + "/" + col_name[i] + ".bin").c_str(), O_RDWR);
+        auto fd = open((path + "/" + col_name[i] + "_0.sst").c_str(), O_CREAT | O_WRONLY, 0666);
         if (-1 == fd) {
-            return false;
+            return errno;
         }
         Defer defer([&]() { return close(fd); });
         if (auto st = buffer_[i].meta_block_->dumpMetaBlock(fd); !st) {
-            return false;
+            return -1;
         }
         if (auto st = write(fd, buffer_[i].dat_, buffer_[i].size_); - 1 == st) {
-            return false;
+            return errno;
         }
     }
-    return true;
+    return 0;
 }
 
 void DataBlockBuilder::reset()

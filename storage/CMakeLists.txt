@@ -8,4 +8,5 @@ add_library(storage ${DIR_STORAGE})
 add_executable(skip_list_test skip_list_test.cc)
 target_link_libraries(skip_list_test libutil.a)
 
-add_executable(buffer_pool_test buffer_pool.cc buffer_pool_test.cc)
+add_executable(file_meta_test file_meta_test.cc)
+target_link_libraries(file_meta_test libstorage.a libutil.a)

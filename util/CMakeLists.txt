@@ -4,8 +4,6 @@ aux_source_directory(. DIR_UTIL)
 
 add_library(util ${DIR_UTIL})
 
-add_executable(binary_test binary_test.cc)
-
 add_executable(arena_test arena.cc arena_test.cc)
 
 add_executable(lru_test lru_cache_test.cc)
