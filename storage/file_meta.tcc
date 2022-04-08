@@ -8,22 +8,23 @@
 #include "../util/binary.tcc"
 #include "../util/bloom_filter.tcc"
 #include <fcntl.h>
+#include <memory>
 #include <sys/stat.h>
 #include <unistd.h>
 
-namespace DB {
+namespace MOKV {
 
 class FileMeta {
 
-    const char* buffer_;
-    const char* path;
+    std::shared_ptr<char[]> buffer_ = nullptr;
+    const char* path_ = nullptr;
     int fd_;
     int file_type_; // 0 for random access file，1 for sequencial access file.
 
     size_t len_ = 0, count_ = 0;
     BloomFilter filter_;
 
-    std::string_view min_, max_;
+    std::shared_ptr<char[]> min_, max_;
 
     int loadMeta();
 
@@ -34,9 +35,19 @@ public:
 
     const BloomFilter& getBloomFilter();
 
-    size_t kvSize();
+    size_t kvSize() const { return count_; }
 
-    std::pair<const std::string_view, const std::string_view> getMinMax();
+    int fd() const { return fd_; }
+
+    void closeFd() { close(fd_); }
+
+    const char* getBuffer();
+
+    size_t getLen() const { return len_; }
+
+    const char* getPath() const { return path_; };
+
+    std::pair<const std::string_view, const std::string_view> getMinMax() const;
 };
 }
 

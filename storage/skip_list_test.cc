@@ -11,9 +11,10 @@
 
 using namespace std::chrono;
 
-template<class T>
+template <class T>
 struct IntCmp {
-    static int compare(T a, T b) {
+    static int compare(T a, T b)
+    {
         if (a < b) {
             return -1;
         }
@@ -23,8 +24,9 @@ struct IntCmp {
 
 #define bench
 
-void test() {
-    DB::SkipList<long long, IntCmp<long long>> skip_list;
+void test()
+{
+    MOKV::SkipList<long long, IntCmp<long long>> skip_list;
     skip_list.insert(1);
     skip_list.insert(4);
     skip_list.insert(7);
@@ -44,9 +46,10 @@ void test() {
     }));
 }
 
-void benchmark() {
+void benchmark()
+{
     const int N = 3.2e4;
-    DB::SkipList<long long, IntCmp<long long>> skip_list;
+    MOKV::SkipList<long long, IntCmp<long long>> skip_list;
     auto st = steady_clock::now();
 
     for (int i = N - 1; i >= 0; --i) {
@@ -69,10 +72,10 @@ void benchmark() {
     auto op = N * 4;
     auto t = duration_cast<microseconds>(ed - st).count();
     printf("ops: %d, time: %zu us, speed: %.6f op/s", op, t, op * 1.0 / t * 1e6);
-
 }
 
-int main() {
+int main()
+{
 #ifdef bench
     benchmark();
 #else

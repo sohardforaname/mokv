@@ -27,7 +27,7 @@ const size_t DB_MAX_IMMEMTABLE = 1;
 
 const size_t SSTABLE_MAGIC_NUM = 0x7a4d;
 
-const size_t SST_MAX_LEVEL = 6;
+const size_t SSTABLE_MAX_LEVEL = 6;
 
 const size_t FILE_CACHE_MAX_FILE = 16;
 const size_t FILE_MAX_SIZE = 1 << 24;

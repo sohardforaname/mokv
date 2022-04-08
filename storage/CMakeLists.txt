@@ -10,3 +10,6 @@ target_link_libraries(skip_list_test libutil.a)
 
 add_executable(file_meta_test file_meta_test.cc)
 target_link_libraries(file_meta_test libstorage.a libutil.a)
+
+add_executable(file_cache_test file_cache_test.cc)
+target_link_libraries(file_cache_test libstorage.a libutil.a)

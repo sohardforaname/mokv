@@ -4,20 +4,20 @@
 
 #include "lru_cache.tcc"
 #include <chrono>
-#include <vector>
 #include <cstdio>
+#include <vector>
 
 using namespace std::chrono;
 
 const int N = 1e5;
 
-void benchmark() {
-    DB::LruCache<int, int> cache(256);
+void benchmark()
+{
+    MOKV::LruCache<int, int> cache(256);
 
     std::vector<int> v(N);
 
     for (auto& n : v) {
-
     }
 
     auto st = steady_clock::now();
@@ -33,7 +33,8 @@ void benchmark() {
     printf("op: %zu op, time: %zu ms, speed %.6f op/s\n", ops, tms, ops * 1e6 / tms);
 }
 
-int main() {
+int main()
+{
     benchmark();
     return 0;
 }

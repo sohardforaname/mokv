@@ -4,6 +4,6 @@
 
 #include "merger.tcc"
 
-namespace DB {
+namespace MOKV {
 
 }

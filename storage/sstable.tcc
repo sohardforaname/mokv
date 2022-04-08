@@ -5,10 +5,7 @@
 #ifndef MOKV_SSTABLE_TCC
 #define MOKV_SSTABLE_TCC
 
-
 class SSTable {
-
 };
 
-
-#endif //MOKV_SSTABLE_TCC
+#endif // MOKV_SSTABLE_TCC

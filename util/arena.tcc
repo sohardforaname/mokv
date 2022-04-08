@@ -8,7 +8,7 @@
 #include "../util/const.tcc"
 #include <vector>
 
-namespace DB {
+namespace MOKV {
 
 class Arena {
 private:

@@ -5,34 +5,41 @@
 #ifndef MOKV_DEFER_TCC
 #define MOKV_DEFER_TCC
 
-#include <utility>
 #include <functional>
+#include <utility>
 
-namespace DB {
+namespace MOKV {
 
-    template<class T>
-    class Defer {
-    private:
-        T closure_;
+template <class T>
+class Defer {
+private:
+    T closure_;
 
-    public:
-        Defer() = delete;
+public:
+    Defer() = delete;
 
-        Defer(const Defer &) = delete;
+    Defer(const Defer&) = delete;
 
-        Defer(Defer &&) = delete;
+    Defer(Defer&&) = delete;
 
-        explicit Defer(T &closure) : closure_(closure) {}
+    explicit Defer(T& closure)
+        : closure_(closure)
+    {
+    }
 
-        //template<class Fn, class ...Args>
-        //explicit Defer(Fn f, Args ...args) : closure_(std::bind(std::move(f), std::move(args)...)) {}
+    // template<class Fn, class ...Args>
+    // explicit Defer(Fn f, Args ...args) : closure_(std::bind(std::move(f), std::move(args)...)) {}
 
-        explicit Defer(T &&closure) : closure_(std::move(closure)) {}
+    explicit Defer(T&& closure)
+        : closure_(std::move(closure))
+    {
+    }
 
-        ~Defer() {
-            closure_();
-        }
-    };
+    ~Defer()
+    {
+        closure_();
+    }
+};
 }
 
-#endif //MOKV_DEFER_TCC
+#endif // MOKV_DEFER_TCC

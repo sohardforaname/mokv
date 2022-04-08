@@ -4,7 +4,7 @@
 
 #include "memtable.tcc"
 
-namespace DB {
+namespace MOKV {
 
 size_t MemTable::sequence_num_ = 0;
 
@@ -36,7 +36,7 @@ const char* MemTable::find(const char* key)
     return nullptr;
 }
 
-bool MemTable::generateSSTableFile(const char* file_path, const Schema& schema)
+bool MemTable::generateSSTableFile(const char* file_path, const Schema& schema, size_t id)
 {
     DataBlockBuilder builder(schema);
 
@@ -47,7 +47,7 @@ bool MemTable::generateSSTableFile(const char* file_path, const Schema& schema)
         builder.add(ptr + offset, *(size_t*)(ptr)-offset);
     }
 
-    int res = builder.finish(file_path);
+    int res = builder.finish(file_path, id);
     builder.reset();
     return res;
 }

@@ -89,6 +89,8 @@ void writeToBinaryFile(int fd, Ts&&... v1)
 {
     (write(fd, v1), ...);
 }
+
+const char* loadVariableLengthString(int fd, size_t& len);
 }
 
 #endif // MOKV_BINARY_TCC

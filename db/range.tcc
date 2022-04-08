@@ -5,13 +5,11 @@
 #ifndef MOKV_RANGE_TCC
 #define MOKV_RANGE_TCC
 
-namespace DB {
+namespace MOKV {
 
-    class RangeIterator {
-
-    };
+class RangeIterator {
+};
 
 }
 
-
-#endif //MOKV_RANGE_TCC
+#endif // MOKV_RANGE_TCC

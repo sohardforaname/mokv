@@ -3,14 +3,15 @@
 //
 
 #include "arena.tcc"
-#include <cstdio>
 #include <chrono>
+#include <cstdio>
 #include <random>
 
 using namespace std::chrono;
 
-void test() {
-    DB::Arena arena;
+void test()
+{
+    MOKV::Arena arena;
 
     for (int i = 0; i < 1e5; ++i) {
         // arena.allocate(1600);
@@ -20,8 +21,9 @@ void test() {
     printf("%zu\n", arena.allocatedSize());
 }
 
-void benchmark() {
-    DB::Arena arena;
+void benchmark()
+{
+    MOKV::Arena arena;
     std::mt19937 mt(steady_clock::now().time_since_epoch().count());
     static const size_t N = 1e6;
 
@@ -40,7 +42,8 @@ void benchmark() {
 
 #define bench
 
-int main() {
+int main()
+{
 #ifdef bench
     benchmark();
 #else

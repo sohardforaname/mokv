@@ -8,23 +8,22 @@
 #include <cstddef>
 #include <cstdio>
 
-namespace DB {
+namespace MOKV {
 
-    class MergeIterator {
-    private:
-        FILE *sst_file;
+class MergeIterator {
+private:
+    FILE* sst_file;
 
-    public:
-        explicit MergeIterator(FILE *sst_file);
+public:
+    explicit MergeIterator(FILE* sst_file);
 
-        const char *next();
+    const char* next();
 
-        bool valid() const;
+    bool valid() const;
 
-        size_t size() const;
-    };
+    size_t size() const;
+};
 
 }
 
-
-#endif //MOKV_MERGER_TCC
+#endif // MOKV_MERGER_TCC

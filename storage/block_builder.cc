@@ -4,7 +4,7 @@
 
 #include "block_builder.tcc"
 
-namespace DB {
+namespace MOKV {
 
 bool MetaBlockBuilder::dumpHeaderBlock(int fd)
 {
@@ -118,7 +118,7 @@ void DataBlockBuilder::add(const char* data, size_t len)
 // The size of memtable is determined.
 // so the size of the SSTable will not be too big
 // and can be written to a file.
-int DataBlockBuilder::finish(const std::string& db_name)
+int DataBlockBuilder::finish(const std::string& db_name, size_t id)
 {
     if (0 != cache_size_) {
         append();
@@ -126,17 +126,18 @@ int DataBlockBuilder::finish(const std::string& db_name)
 
     auto path = "./" + db_name;
     umask(0);
-    if (-1 == mkdir(path.c_str(), 0777)) {
+    if (-1 == access(path.c_str(), F_OK)) {
         return errno;
     }
 
     auto& col_name = schema_.getColName();
     for (size_t i = 0; i < col_num_; ++i) {
-        auto fd = open((path + "/" + col_name[i] + "_0.sst").c_str(), O_CREAT | O_WRONLY, 0666);
+        auto file_name = std::move(path + "/" + col_name[i] + "_" + std::to_string(id) + "_0.sst");
+        auto fd = open(file_name.c_str(), O_CREAT | O_WRONLY, 0666);
         if (-1 == fd) {
             return errno;
         }
-        Defer defer([&]() { return close(fd); });
+        Defer defer([&]() { close(fd); });
         if (auto st = buffer_[i].meta_block_->dumpMetaBlock(fd); !st) {
             return -1;
         }

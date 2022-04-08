@@ -20,7 +20,7 @@
 
 // TODO: key-value分离
 
-namespace DB {
+namespace MOKV {
 
 struct FlexibleComparator : public Comparator<FlexibleComparator> {
     static int compare(const char* a, const char* b)
@@ -134,7 +134,7 @@ public:
 
     void add(const char* data, size_t len);
 
-    int finish(const std::string& db_name);
+    int finish(const std::string& db_name, size_t id);
 
     void reset();
 };

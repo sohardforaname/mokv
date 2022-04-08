@@ -4,13 +4,15 @@
 
 #include "db.tcc"
 
-namespace DB {
+namespace MOKV {
 
-    DB *DB::create(const std::string &db_name) {
-        return nullptr;
-    }
+DB* DB::create(const std::string& db_name)
+{
+    return nullptr;
+}
 
-    DB *DB::open(const std::string &db_name) {
-        return nullptr;
-    }
+DB* DB::open(const std::string& db_name)
+{
+    return nullptr;
+}
 }

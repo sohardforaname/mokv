@@ -11,10 +11,12 @@
 #include <utility>
 #include <vector>
 
+#include "../storage/file_cache.tcc"
 #include "../storage/memtable.tcc"
+#include "../util/defer.tcc"
 #include "range.tcc"
 
-namespace DB {
+namespace MOKV {
 
 class TableSet;
 
@@ -53,6 +55,10 @@ private:
     MemTable* mem_ = new MemTable;
     std::vector<MemTable*> imm_;
 
+    size_t l0_sst_id_ = 0;
+
+    // FileCache files_;
+
     Table() = delete;
 
     Table(std::string name, Schema schema)
@@ -68,7 +74,7 @@ public:
 
     Table(Table&&) = default;
 
-    std::string_view name() const
+    const std::string_view name() const
     {
         return name_;
     }
@@ -92,9 +98,24 @@ private:
     std::unordered_map<std::string, Table> tables_;
 
 public:
-    Table* create(std::string name, Schema schema)
+    Table* create(std::string db_name, Schema schema)
     {
-        return &tables_.try_emplace(std::move(name), std::move(Table(name, std::move(schema)))).first->second;
+        auto path = std::move("./" + db_name);
+        umask(0);
+        if (-1 == mkdir(path.c_str(), 0777)) {
+            return nullptr;
+        }
+        auto fd = open((path + "/" + db_name + ".sma").c_str(), O_CREAT | O_WRONLY, 0666);
+        if (-1 == fd) {
+            return nullptr;
+        }
+        Defer defer([&]() { close(fd); });
+        auto schema_string = schema.toString();
+        if (-1 == ::write(fd, schema_string.c_str(), schema_string.size())) {
+            return nullptr;
+        }
+
+        return &tables_.try_emplace(std::move(db_name), std::move(Table(db_name, std::move(schema)))).first->second;
     }
 
     size_t size() const

@@ -4,7 +4,7 @@
 
 #include "table.tcc"
 
-namespace DB {
+namespace MOKV {
 
 void Table::write(const char* key, const char* value)
 {
@@ -22,7 +22,7 @@ void Table::writeBatch(Batch batch)
     imm_.emplace_back(mem_);
 
     std::thread dump_thread([&]() {
-        imm_.back()->generateSSTableFile("test_db", default_schema);
+        imm_.back()->generateSSTableFile((this->name_).c_str(), default_schema, l0_sst_id_++);
     });
     // dump_thread.detach();
     dump_thread.join();
@@ -48,6 +48,12 @@ const char* Table::find(const char* key, size_t col_idx)
             return ptr;
         }
     }
+
+    for (int i = 0; i < SSTABLE_MAX_LEVEL; ++i) {
+        // for (auto& f : files_.getFilesOnLevel(i)) {
+        // }
+    }
+
     return nullptr;
 }
 
