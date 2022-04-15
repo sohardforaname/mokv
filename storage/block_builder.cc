@@ -118,6 +118,7 @@ void DataBlockBuilder::add(const char* data, size_t len)
 // The size of memtable is determined.
 // so the size of the SSTable will not be too big
 // and can be written to a file.
+
 int DataBlockBuilder::finish(const std::string& db_name, size_t id)
 {
     if (0 != cache_size_) {
@@ -132,7 +133,8 @@ int DataBlockBuilder::finish(const std::string& db_name, size_t id)
 
     auto& col_name = schema_.getColName();
     for (size_t i = 0; i < col_num_; ++i) {
-        auto file_name = std::move(path + "/" + col_name[i] + "_" + std::to_string(id) + "_0.sst");
+        // auto file_name = std::move(path + "/" + col_name[i] + "_" + std::to_string(id) + "_0.sst");
+        auto file_name = std::move(generateFileName(db_name, col_name[i], id, 0));
         auto fd = open(file_name.c_str(), O_CREAT | O_WRONLY, 0666);
         if (-1 == fd) {
             return errno;

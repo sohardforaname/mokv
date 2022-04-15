@@ -66,8 +66,8 @@ void FileIterator::seekN(int n)
 void FileIterator::next()
 {
     id_++;
-    item_len_ = len_;
     offset_ += item_len_;
+    item_len_ = len_;
     if (len_ == 0) {
         readFromBuffer(buffer_ + offset_, item_len_);
         offset_ += sizeof(len_);

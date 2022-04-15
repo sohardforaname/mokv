@@ -17,15 +17,15 @@ int FileMeta::loadMeta()
     if (0 == len_) {
         size_t len;
         const char* p1 = loadVariableLengthString(fd_, len);
-        min_ = std::string_view(p1, len);
+        min_ = AllocSlice(p1, len, false);
         const char* p2 = loadVariableLengthString(fd_, len);
-        max_ = std::string_view(p2, len);
+        max_ = AllocSlice(p2, len, false);
         return errno;
     }
     char *min_buffer = new char[len_], *max_buffer = new char[len_];
     readFromBinaryFile(fd_, std::make_pair(min_buffer, len_), std::make_pair(max_buffer, len_));
-    min_ = std::string_view(min_buffer);
-    max_ = std::string_view(max_buffer);
+    min_ = AllocSlice(min_buffer, len_, false);
+    max_ = AllocSlice(max_buffer, len_, false);
     return errno;
 }
 
@@ -49,10 +49,10 @@ const BloomFilter& FileMeta::getBloomFilter()
     return filter_;
 }
 
-const char* FileMeta::getBuffer()
+const char* FileMeta::getBuffer() const
 {
-    if (buffer_ != nullptr) {
-        return buffer_;
+    if (buffer_.data()) {
+        return buffer_.data();
     }
 
     struct stat file_info;
@@ -64,17 +64,19 @@ const char* FileMeta::getBuffer()
         return nullptr;
     }
     int data_size = file_info.st_size - cur_offset;
-    buffer_ = new char[data_size];
-    if (-1 == ::read(fd_, buffer_, data_size)) {
-        delete[] buffer_;
-        buffer_ = nullptr;
+    auto buffer = new char[data_size];
+    if (-1 == ::read(fd_, buffer, data_size)) {
+        delete[] buffer;
         return nullptr;
     }
-    return buffer_;
+    buffer_ = AllocSlice(buffer, data_size, false);
+    return buffer_.data();
 }
 
 std::pair<const std::string_view, const std::string_view> FileMeta::getMinMax() const
 {
-    return make_pair(min_, max_);
+    return make_pair(
+        std::string_view(min_.data(), min_.size()),
+        std::string_view(max_.data(), max_.size()));
 }
 }

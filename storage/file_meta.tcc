@@ -2,11 +2,12 @@
 // Created by ucchi_mchxyz on 2022/1/27.
 //
 
-#ifndef MOKV_FILE_READER_TCC
-#define MOKV_FILE_READER_TCC
+#ifndef MOKV_FILE_META_TCC
+#define MOKV_FILE_META_TCC
 
 #include "../util/binary.tcc"
 #include "../util/bloom_filter.tcc"
+#include "../util/slice.tcc"
 #include <fcntl.h>
 #include <memory>
 #include <sys/stat.h>
@@ -16,7 +17,7 @@ namespace MOKV {
 
 class FileMeta {
 
-    std::shared_ptr<char[]> buffer_ = nullptr;
+    mutable AllocSlice buffer_;
     const char* path_ = nullptr;
     int fd_;
     int file_type_; // 0 for random access file，1 for sequencial access file.
@@ -24,7 +25,7 @@ class FileMeta {
     size_t len_ = 0, count_ = 0;
     BloomFilter filter_;
 
-    std::shared_ptr<char[]> min_, max_;
+    AllocSlice min_, max_;
 
     int loadMeta();
 
@@ -41,7 +42,7 @@ public:
 
     void closeFd() { close(fd_); }
 
-    const char* getBuffer();
+    const char* getBuffer() const;
 
     size_t getLen() const { return len_; }
 

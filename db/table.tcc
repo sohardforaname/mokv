@@ -13,6 +13,7 @@
 
 #include "../storage/file_cache.tcc"
 #include "../storage/memtable.tcc"
+#include "../storage/util.tcc"
 #include "../util/defer.tcc"
 #include "range.tcc"
 
@@ -57,40 +58,65 @@ private:
 
     size_t l0_sst_id_ = 0;
 
-    // FileCache files_;
+    // std::mutex mutex_;
+
+    FileCache files_;
+
+    size_t line_id_;
+
+    int schema_fd_;
 
     Table() = delete;
 
-    Table(std::string name, Schema schema)
+    Table(std::string name, Schema schema, int schema_fd,
+        size_t l0_sst_id = 0, size_t line_id = 0)
         : name_(std::move(name))
         , schema_(std::move(schema))
+        , schema_fd_(schema_fd)
+        , l0_sst_id_(l0_sst_id)
+        , line_id_(line_id)
     {
     }
 
     friend TableSet;
+
+    void findDataInMemtable();
+
+    void findDataInSSTable();
 
 public:
     Table(const Table&) = delete;
 
     Table(Table&&) = default;
 
-    const std::string_view name() const
-    {
-        return name_;
-    }
+    const std::string_view name() const { return name_; }
 
-    const Schema& schema() const
-    {
-        return schema_;
-    }
+    const Schema& schema() const { return schema_; }
 
     void write(const char* key, const char* value);
 
     void writeBatch(Batch batch);
 
-    const char* find(const char* key, size_t col_idx);
+    const char* find(const char* key, const std::string& col_name);
+
+    int findIndex(
+        const std::string& col_name,
+        std::vector<int>& indics,
+        bool (*condition)(const std::string_view));
+
+    int findData(
+        const std::string& col_name,
+        std::vector<std::string_view>& data,
+        bool (*condition)(const std::string_view));
+
+    int findAll(const std::string& col_name,
+        std::vector<std::string_view>& data,
+        std::vector<int>& indics,
+        bool (*condition)(const std::string_view));
 
     RangeIterator range();
+
+    int close();
 };
 
 class TableSet {
@@ -98,30 +124,11 @@ private:
     std::unordered_map<std::string, Table> tables_;
 
 public:
-    Table* create(std::string db_name, Schema schema)
-    {
-        auto path = std::move("./" + db_name);
-        umask(0);
-        if (-1 == mkdir(path.c_str(), 0777)) {
-            return nullptr;
-        }
-        auto fd = open((path + "/" + db_name + ".sma").c_str(), O_CREAT | O_WRONLY, 0666);
-        if (-1 == fd) {
-            return nullptr;
-        }
-        Defer defer([&]() { close(fd); });
-        auto schema_string = schema.toString();
-        if (-1 == ::write(fd, schema_string.c_str(), schema_string.size())) {
-            return nullptr;
-        }
+    Table* open(std::string db_name);
 
-        return &tables_.try_emplace(std::move(db_name), std::move(Table(db_name, std::move(schema)))).first->second;
-    }
+    Table* create(std::string db_name, Schema schema);
 
-    size_t size() const
-    {
-        return tables_.size();
-    }
+    size_t size() const { return tables_.size(); }
 };
 
 }

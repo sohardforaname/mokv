@@ -9,7 +9,7 @@
 #include <cstring>
 #include <unistd.h>
 
-namespace DB {
+namespace MOKV {
 template <class T, class Ty, class Size>
 void read(const T* buffer, std::pair<Ty*, Size>& v, size_t& cur_pos)
 {

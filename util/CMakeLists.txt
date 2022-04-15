@@ -7,3 +7,5 @@ add_library(util ${DIR_UTIL})
 add_executable(arena_test arena.cc arena_test.cc)
 
 add_executable(lru_test lru_cache_test.cc)
+
+add_executable(slice_test slice_test.cc)

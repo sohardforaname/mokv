@@ -5,25 +5,29 @@ namespace MOKV {
 
 class AllocSlice {
 private:
-    std::shared_ptr<char[]> data_;
+    std::shared_ptr<const char[]> data_;
 
-    size_t len_;
+    size_t len_ = 0;
 
 public:
-    AllocSlice(const char* s, int len)
+    AllocSlice() = default;
+
+    AllocSlice(const char* s, int len, bool is_alloc = true)
         : len_(len)
     {
-        char* blk = new char[len];
-        memcpy(blk, s, len);
-        data_.reset(blk);
+        if (is_alloc) {
+            char* blk = new char[len_];
+            memcpy(blk, s, len);
+            data_.reset(blk);
+        } else {
+            data_.reset(s);
+        }
     }
 
-    AllocSlice(const AllocSlice&) = default;
-    AllocSlice(AllocSlice&&) = default;
-
-    ~AllocSlice() = default;
-
-    const char* data() const { return data_.get(); }
+    const char* data() const
+    {
+        return data_.get();
+    }
     size_t size() const { return len_; }
 
     int compare(const AllocSlice& rhs)

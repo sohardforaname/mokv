@@ -79,7 +79,9 @@ public:
 
     bool generateSSTableFile(const char* file_path, const Schema& schema, size_t id);
 
-    void insert(const char* key, const char* value, ValueType value_type);
+    void insert(const char* key, size_t key_size,
+        const char* value, size_t value_size,
+        ValueType value_type);
 
     const char* find(const char* key);
 

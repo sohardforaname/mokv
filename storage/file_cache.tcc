@@ -33,11 +33,11 @@ public:
 class FileIterator {
 private:
     size_t len_, id_ = 0, kv_size_;
-    size_t offset_ = 0, item_len_;
+    size_t offset_ = 0, item_len_ = 0;
     const char* buffer_ = nullptr;
 
 public:
-    int setMetaInfo(FileMeta& meta)
+    int setMetaInfo(const FileMeta& meta)
     {
         len_ = meta.getLen();
         kv_size_ = meta.kvSize();

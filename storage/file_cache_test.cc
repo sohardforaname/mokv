@@ -16,12 +16,12 @@ void test()
         iter.next();
         auto view = iter.getItem();
         printf("%s\n", std::string(view.data(), view.size()).c_str());
-        printf("%d\n", iter.getId());
-        printf("%d\n", iter.diff());
+        printf("%zu\n", iter.getId());
+        printf("%zu\n", iter.diff());
 
         printf("%s\n", std::string(view.data(), view.size()).c_str());
-        printf("%d\n", iter.getId());
-        printf("%d\n", iter.diff());
+        printf("%zu\n", iter.getId());
+        printf("%zu\n", iter.diff());
     }
 
     MOKV::FileIterator iter1;
@@ -31,8 +31,8 @@ void test()
     iter1.seek("key4");
     auto view1 = iter1.getItem();
     printf("%s\n", std::string(view1.data(), view1.size()).c_str());
-    printf("%d\n", iter1.getId());
-    printf("%d\n", iter1.diff());
+    printf("%zu\n", iter1.getId());
+    printf("%zu\n", iter1.diff());
 
     MOKV::FileIterator iter2;
     if (iter2.setMetaInfo(meta)) {
@@ -41,8 +41,8 @@ void test()
     iter2.seekN(2);
     auto view2 = iter2.getItem();
     printf("%s\n", std::string(view2.data(), view2.size()).c_str());
-    printf("%d\n", iter2.getId());
-    printf("%d\n", iter2.diff());
+    printf("%zu\n", iter2.getId());
+    printf("%zu\n", iter2.diff());
 
     printf("%d\n", cache.findIndex(fd, "key3"));
 }
