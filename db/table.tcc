@@ -84,10 +84,10 @@ private:
 
     void findDataInSSTable();
 
+    std::mutex mutex_;
+
 public:
     Table(const Table&) = delete;
-
-    Table(Table&&) = default;
 
     const std::string_view name() const { return name_; }
 
@@ -97,8 +97,6 @@ public:
 
     void writeBatch(Batch batch);
 
-    const char* find(const char* key, const std::string& col_name);
-
     int findIndex(
         const std::string& col_name,
         std::vector<int>& indics,
@@ -106,13 +104,14 @@ public:
 
     int findData(
         const std::string& col_name,
-        std::vector<std::string_view>& data,
+        std::vector<std::string>& data,
         bool (*condition)(const std::string_view));
 
     int findAll(const std::string& col_name,
-        std::vector<std::string_view>& data,
+        std::vector<std::string>& data,
         std::vector<int>& indics,
-        bool (*condition)(const std::string_view));
+        bool (*condition)(const std::string_view),
+        int mode = 3);
 
     RangeIterator range();
 
@@ -121,7 +120,7 @@ public:
 
 class TableSet {
 private:
-    std::unordered_map<std::string, Table> tables_;
+    std::unordered_map<std::string, Table*> tables_;
 
 public:
     Table* open(std::string db_name);
@@ -129,6 +128,8 @@ public:
     Table* create(std::string db_name, Schema schema);
 
     size_t size() const { return tables_.size(); }
+
+    int close(std::string db_name);
 };
 
 }

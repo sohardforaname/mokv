@@ -18,7 +18,7 @@ namespace MOKV {
 class FileMeta {
 
     mutable AllocSlice buffer_;
-    const char* path_ = nullptr;
+    std::string path_;
     int fd_;
     int file_type_; // 0 for random access file，1 for sequencial access file.
 
@@ -46,7 +46,7 @@ public:
 
     size_t getLen() const { return len_; }
 
-    const char* getPath() const { return path_; };
+    const char* getPath() const { return path_.c_str(); };
 
     std::pair<const std::string_view, const std::string_view> getMinMax() const;
 };

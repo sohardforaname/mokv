@@ -12,4 +12,4 @@ find_package(Threads REQUIRED)
 add_subdirectory(storage)
 add_subdirectory(util)
 add_subdirectory(db)
-add_executable(moKV main.cpp storage util db)
+

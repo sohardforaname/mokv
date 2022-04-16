@@ -42,7 +42,7 @@ public:
         len_ = meta.getLen();
         kv_size_ = meta.kvSize();
         buffer_ = meta.getBuffer();
-        return errno;
+        return 0;
     }
 
     void seek(const char* value);

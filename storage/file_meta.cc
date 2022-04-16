@@ -20,13 +20,13 @@ int FileMeta::loadMeta()
         min_ = AllocSlice(p1, len, false);
         const char* p2 = loadVariableLengthString(fd_, len);
         max_ = AllocSlice(p2, len, false);
-        return errno;
+        return 0;
     }
     char *min_buffer = new char[len_], *max_buffer = new char[len_];
     readFromBinaryFile(fd_, std::make_pair(min_buffer, len_), std::make_pair(max_buffer, len_));
     min_ = AllocSlice(min_buffer, len_, false);
     max_ = AllocSlice(max_buffer, len_, false);
-    return errno;
+    return 0;
 }
 
 int FileMeta::loadBloomfilter()
@@ -56,7 +56,7 @@ const char* FileMeta::getBuffer() const
     }
 
     struct stat file_info;
-    if (stat(path_, &file_info)) {
+    if (stat(path_.c_str(), &file_info)) {
         return nullptr;
     }
     int cur_offset = lseek(fd_, 0, SEEK_CUR);

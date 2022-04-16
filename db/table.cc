@@ -35,7 +35,9 @@ void Table::writeBatch(Batch batch)
     imm_.emplace_back(mem_);
 
     std::thread dump_thread([&]() {
-        imm_.back()->generateSSTableFile((this->name_).c_str(), default_schema, l0_sst_id_++);
+        auto mem = imm_.back();
+        mem->generateSSTableFile((this->name_).c_str(), default_schema, l0_sst_id_++);
+        imm_.pop_back();
         // std::lock_guard lock(mutex_);
     });
     // dump_thread.detach();
@@ -44,9 +46,31 @@ void Table::writeBatch(Batch batch)
     mem_ = new MemTable;
 }
 
-const char* Table::find(const char* key, const std::string& col_name)
+int Table::findIndex(
+    const std::string& col_name,
+    std::vector<int>& indics,
+    bool (*condition)(const std::string_view))
 {
-    auto f = [&](MemTable* mem) -> const char* {
+    std::vector<std::string> tmp;
+    return findAll(col_name, tmp, indics, condition, 2);
+}
+
+int Table::findData(
+    const std::string& col_name,
+    std::vector<std::string>& data,
+    bool (*condition)(const std::string_view))
+{
+    std::vector<int> tmp;
+    return findAll(col_name, data, tmp, condition, 1);
+}
+
+int Table::findAll(const std::string& col_name,
+    std::vector<std::string>& data,
+    std::vector<int>& indics,
+    bool (*condition)(const std::string_view),
+    int mode)
+{
+    /*auto f = [&](MemTable* mem) -> const char* {
         MemTable::ref(mem);
         auto ptr = mem->find(key);
         MemTable::unref(mem);
@@ -60,24 +84,37 @@ const char* Table::find(const char* key, const std::string& col_name)
         if (const auto ptr = f(p); nullptr != ptr) {
             return ptr;
         }
-    }
+    }*/
 
     // 打开这一列的所有层数的文件，然后用迭代器查找
     // 文件名是 ./{table_name}/{col_name}_{id}_{level}.sst
     // 主键列
     int idx = schema_.getColIdxByName(col_name);
-    if (idx != schema_.getPrimaryIdx()) {
-    }
-    for (int i = 0; i < SSTABLE_MAX_LEVEL; ++i) {
-        for (int j = l0_sst_id_; j >= 0; --j) {
+    for (int i = 0; i < (SSTABLE_MAX_LEVEL, 1); ++i) {
+        for (int j = l0_sst_id_ - 1; j >= 0; --j) {
             int fd = files_.openFile(generateFileName(name_, col_name, j, i).c_str());
             if (-1 == fd) {
                 continue;
             }
+            FileIterator iter;
+            iter.setMetaInfo(files_.getMeta(fd));
+            while (iter.hasNext()) {
+                iter.next();
+                auto view = iter.getItem();
+                if (condition(view)) {
+                    if (mode & 1) {
+                        data.push_back(std::string(view.data(), view.size() - sizeof(size_t)));
+                    }
+                    if (mode & 2) {
+                        size_t idx;
+                        readFromBuffer(view.data() + view.size() - sizeof(size_t), idx);
+                        indics.push_back(idx);
+                    }
+                }
+            }
         }
     }
-
-    return nullptr;
+    return 0;
 }
 
 int Table::close()
@@ -101,8 +138,11 @@ Schema getSchema(FILE* fp)
     size_t col_size;
     fscanf(fp, "%zu", &col_size);
     std::vector<std::string> col_name;
+    col_name.reserve(col_size);
     std::vector<size_t> col_len;
-    while (col_size > 0) {
+    col_len.reserve(col_size);
+
+    while (col_size-- > 0) {
         size_t l, col_l;
         fscanf(fp, "%zu", &l);
         char* buf = new char[l + 1];
@@ -115,6 +155,10 @@ Schema getSchema(FILE* fp)
 
 Table* TableSet::open(std::string db_name)
 {
+    if (tables_.count(db_name)) {
+        return tables_.at(db_name);
+    }
+
     auto path = std::move("./" + db_name);
     if (-1 == access(path.c_str(), F_OK)) {
         return nullptr;
@@ -136,15 +180,15 @@ Table* TableSet::open(std::string db_name)
     size_t sst_id, line_id;
     fscanf(fp, "%zu%zu", &sst_id, &line_id);
 
-    return &tables_.try_emplace(
-                       std::move(db_name),
-                       std::move(Table(db_name, std::move(schema), fd,
-                           sst_id, line_id)))
-                .first->second;
+    Table* table = new Table(db_name, std::move(schema), fd, sst_id, line_id);
+    return tables_.try_emplace(std::move(db_name), table).first->second;
 }
 
 Table* TableSet::create(std::string db_name, Schema schema)
 {
+    if (tables_.count(db_name)) {
+        return tables_.at(db_name);
+    }
 
     auto path = std::move("./" + db_name);
     umask(0);
@@ -166,7 +210,21 @@ Table* TableSet::create(std::string db_name, Schema schema)
         return nullptr;
     };
 
-    return &tables_.try_emplace(std::move(db_name), std::move(Table(db_name, std::move(schema), fd))).first->second;
+    Table* table = new Table(db_name, std::move(schema), fd);
+    return tables_.try_emplace(std::move(db_name), table).first->second;
+}
+
+int TableSet::close(std::string db_name)
+{
+    if (!tables_.count(db_name)) {
+        return 0;
+    }
+    int st = tables_.at(db_name)->close();
+    if (!st) {
+        delete tables_.at(db_name);
+        tables_.erase(db_name);
+    }
+    return st;
 }
 
 RangeIterator Table::range()
